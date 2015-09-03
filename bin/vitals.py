@@ -140,6 +140,9 @@ also maintains complete VitalSigns lists by patient id"""
             setattr(self, f.lower(), m[f])
         self.sourcerow = m
 
+        self.category = "vital-signs"
+        self.categoryDisplay = "Vital Signs"
+
         # Append VitalSign to the patient's VitalSign list:
         if self.pid in  self.__class__.vitals:
           self.__class__.vitals[self.pid].append(self)

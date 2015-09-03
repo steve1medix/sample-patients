@@ -84,6 +84,9 @@ and a dictionary of loinc code frequencies"""
         self.acc_num = rndAccNum()
         #self.scale = Loinc.info[self.code].scale
       
+        self.category = "laboratory"
+        self.categoryDisplay = "Laboratory"
+
         # Append result to the results dictionary of lists
         if self.pid in  self.__class__.results:
           self.__class__.results[self.pid].append(self)
