@@ -50,10 +50,29 @@ def displayPatientSummary(pid):
    else:
      for med in Med.meds[pid]: 
        print med.name+"{%d}; "%len(Refill.refill_list(pid,med.rxn)),
+   print "\nALLERGIES: ",
+   if not pid in Allergy.allergies: print "None",
+   else:
+     for a in Allergy.allergies[pid]: 
+       print a.allergen+";",
+   print "\nIMMUNIZATIONS: ",
+   if not pid in Immunization.immunizations: print "None",
+   else:
+     for i in Immunization.immunizations[pid]: 
+       print i.cvx_title+";",
+   print "\nPROCEDURES: ",
+   if not pid in Procedure.procedures: print "None",
+   else:
+     for p in Procedure.procedures[pid]: 
+       print p.name+";",
    print "\nLABS: ",
    if not pid in Lab.results: print "None",
    else:
-     print "%d results"%len(Lab.results[pid])
+     print "%d results"%len(Lab.results[pid]),
+   print "\nVITAL SIGNS: ",
+   if not pid in VitalSigns.vitals: print "None",
+   else:
+     print "%d vitals"%len(VitalSigns.vitals[pid])
    print "\n"
 
 if __name__=='__main__':
