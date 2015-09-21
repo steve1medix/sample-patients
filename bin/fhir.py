@@ -200,16 +200,20 @@ class FHIRSamplePatient(object):
         id = uid("Observation", "%s-lab" % o.id)
         print >>pfile, template.render(dict(globals(), **locals()))
 
-    medtemplate = template_env.get_template('medication.xml')
-    dispensetemplate = template_env.get_template('medication_dispense.xml')
+    med_statement_tmpl = template_env.get_template('medication_statement.xml')
+    med_order_tmpl = template_env.get_template('medication_order.xml')
+    med_dispense_tmpl = template_env.get_template('medication_dispense.xml')
     if self.pid in Med.meds:
       for m in Med.meds[self.pid]:
+        medid = id = uid("MedicationStatement", int(m.id) + 1000)
+        print >>pfile, med_statement_tmpl.render(dict(globals(), **locals()))
+
         medid = id = uid("MedicationOrder", m.id)
-        print >>pfile, medtemplate.render(dict(globals(), **locals()))
+        print >>pfile, med_order_tmpl.render(dict(globals(), **locals()))
 
         for f in Refill.refill_list(m.pid, m.rxn):
           id = uid("MedicationDispense", f.id)
-          print >>pfile, dispensetemplate.render(dict(globals(), **locals()))
+          print >>pfile, med_dispense_tmpl.render(dict(globals(), **locals()))
 
     template = template_env.get_template('condition.xml')
     if self.pid in Problem.problems:
