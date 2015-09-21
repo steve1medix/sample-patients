@@ -171,7 +171,7 @@ class FHIRSamplePatient(object):
                 "units": "mm[Hg]",
                 "unitsCode": "mm[Hg]"
         }
-        template = template_env.get_template('observation.xml')
+        template = template_env.get_template('observation_vital_signs.xml')
         print >>pfile, template.render(dict(globals(), **locals()))
 
         id = diastolicid
@@ -184,16 +184,17 @@ class FHIRSamplePatient(object):
                 "units": "mm[Hg]",
                 "unitsCode": "mm[Hg]"
         }
-        template = template_env.get_template('observation.xml')
+        template = template_env.get_template('observation_vital_signs.xml')
         print >>pfile, template.render(dict(globals(), **locals()))
 
-    template = template_env.get_template('observation.xml')
+    template = template_env.get_template('observation_vital_signs.xml')
     for o in othervitals:
         id = uid("Observation", '-'.join((o["id"], o["name"].lower().replace(' ', '').replace('_', ''))))
         if "units" in o.keys():
            o["unitsCode"] = o["units"]
         print >>pfile, template.render(dict(globals(), **locals()))
 
+    template = template_env.get_template('observation_laboratory.xml')
     if self.pid in Lab.results:
       for o in Lab.results[self.pid]:
         id = uid("Observation", "%s-lab" % o.id)
@@ -244,7 +245,7 @@ class FHIRSamplePatient(object):
         print >>pfile, template.render(dict(globals(), **locals()))
 
     if p.gestage:
-        template = template_env.get_template('observation.xml')
+        template = template_env.get_template('observation_vital_signs.xml')
         o = {
             "date": p.dob,
             "code": "18185-9",
