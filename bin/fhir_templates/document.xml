@@ -1,12 +1,13 @@
   {% extends "entry.xml" %}
   {% block content %}
-    <DocumentReference xmlns="http://hl7.org/fhir">
+    <DocumentReference>
+  {{resource_id}}
         <text>
           <status value="generated"/>
           <div xmlns="http://www.w3.org/1999/xhtml">{{d.title}}</div>
         </text>
         <subject>
-          <reference value="{{pid}}"/>
+          <reference value="{{base_url}}{{pid}}"/>
         </subject>
         <type>
           <coding>
@@ -14,6 +15,7 @@
             <code value="{{d.code}}"/>
             <display value="{{d.display}}"/>
           </coding>
+          <text value="{{d.display}}"/>
         </type>
         <author>
           <reference value="Practitioner/1234"/>
@@ -22,11 +24,15 @@
         <indexed value="{{now}}"/>
         <status value="current"/>
         <description value="{{d.title}}"/>
-        <mimeType value="{{d.mime_type}}"/>
-        {%- if d.size and d.hash %}
-        <!-- <size value="{{d.size}}"/> -->
-        <hash value="{{d.hash}}"/>
-        {%- endif %}
-        <location value="/{{d.binary_id}}"/>
+        <content>
+            <attachment>
+                {%- if d.size and d.hash %}
+                <size value="{{d.size}}"/>
+                <hash value="{{d.hash}}"/>
+                {%- endif %}
+                <url value="/{{d.binary_id}}"/>
+               <contentType value="{{d.mime_type}}"/>
+            </attachment>
+        </content>
     </DocumentReference>
   {% endblock %}

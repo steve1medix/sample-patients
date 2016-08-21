@@ -1,21 +1,16 @@
   {% extends "entry.xml" %}
   {% block content %}
-  <Observation xmlns="http://hl7.org/fhir">
-    {%- if bp.encounter_id %}
-    <extension url="http://fhir-registry.smarthealthit.org/Profile/vital-signs#encounter">
-        <valueResource>
-            <reference value="{{bp.encounter_id}}"/>
-        </valueResource>
-    </extension>
-    {% endif %}
+  <Observation>
+    {{resource_id}}
     {%- if bp.position %}
-    <extension url="http://fhir-registry.smarthealthit.org/Profile/vital-signs#position">
+    <extension url="http://fhir-registry.smarthealthit.org/StructureDefinition/vital-signs#position">
       <valueCodeableConcept>
          <coding>
              <system value="{{bp.position_system}}"/>
              <code value="{{bp.position_code}}"/>
              <display value="{{bp.position}}"/>
          </coding>
+         <text value="{{bp.position}}"/>
        </valueCodeableConcept>
     </extension>
     {% endif %}
@@ -23,31 +18,27 @@
       <status value="generated"/>
       <div xmlns="http://www.w3.org/1999/xhtml">{{bp.date}}: Blood pressure {{bp.systolic}}/{{bp.diastolic}} mmHg</div>
     </text>
-    <name>
+    <category>
+      <coding>
+          <system value="http://hl7.org/fhir/observation-category"/>
+          <code value="vital-signs"/>
+          <display value="Vital Signs"/>
+      </coding>
+      <text value="Vital Signs"/>
+    </category>
+    <code>
       <coding>
         <system value="http://loinc.org"/>
         <code value="55284-4"/>
         <display value="Blood pressure systolic and diastolic"/>
       </coding>
-    </name>
-    <appliesDateTime value="{{bp.date}}"/>
+      <text value="Blood pressure systolic and diastolic"/>
+    </code>
+    <effectiveDateTime value="{{bp.date}}"/>
     <status value="final"/>
-    <reliability value="ok"/>
     <subject>
-      <reference value="{{pid}}"/>
+      <reference value="{{base_url}}{{pid}}"/>
     </subject>
-    <related>
-      <type value="has-component"/>
-      <target>
-        <reference value="{{systolicid}}"/>
-      </target>
-    </related>
-    <related>
-      <type value="has-component"/>
-      <target>
-        <reference value="{{diastolicid}}"/>
-      </target>
-    </related>
     {%- if bp.site %}
     <bodySite>
      <coding>
@@ -55,6 +46,7 @@
          <code value="{{bp.site_code}}"/>
          <display value="{{bp.site}}"/>
      </coding>
+     <text value="{{bp.site}}"/>
     </bodySite>
     {% endif %}
     {%- if bp.method %}
@@ -64,7 +56,48 @@
          <code value="{{bp.method_code}}"/>
          <display value="{{bp.method}}"/>
      </coding>
+     <text value="{{bp.method}}"/>
     </method>
     {% endif %}
+    {%- if bp.encounter_id %}
+    <encounter>
+      <reference value="{{base_url}}{{bp.encounter_id}}"/>
+    </encounter>
+    {% endif %}
+
+    <component>
+        <code>
+            <coding>
+                <system value="http://loinc.org"/>
+                <code value="8480-6"/>
+                <display value="Systolic blood pressure"/>
+            </coding>
+            <text value="Systolic blood pressure"/>
+        </code>
+        <valueQuantity>
+            <value value="{{bp.systolic}}"/>
+            <unit value="mmHg"/>
+            <system value="http://unitsofmeasure.org" />
+            <code value="mm[Hg]"/>
+        </valueQuantity>
+    </component>
+
+    <component>
+        <code>
+            <coding>
+                <system value="http://loinc.org"/>
+                <code value="8462-4"/>
+                <display value="Diastolic blood pressure"/>
+            </coding>
+            <text value="Diastolic blood pressure"/>
+        </code>
+        <valueQuantity>
+            <value value="{{bp.diastolic}}"/>
+            <unit value="mmHg"/>
+            <system value="http://unitsofmeasure.org" />
+            <code value="mm[Hg]"/>
+        </valueQuantity>
+    </component>
+
   </Observation>
   {% endblock %}

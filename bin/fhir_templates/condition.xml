@@ -1,13 +1,14 @@
   {% extends "entry.xml" %}
   {% block content %}
-  <Condition xmlns="http://hl7.org/fhir">
+  <Condition>
+  {{resource_id}}
     <text>
      <status value="generated"/>
      <div xmlns="http://www.w3.org/1999/xhtml">{{c.name}}</div>   
    </text>
-    <subject>
-      <reference value="{{pid}}"/>
-    </subject>
+    <patient>
+      <reference value="{{base_url}}{{pid}}"/>
+    </patient>
     <code> 
       <coding>
         <system value="http://snomed.info/sct"/>
@@ -16,8 +17,9 @@
       </coding>
       <text value="{{c.name}}"/>
     </code>
-   <status value="confirmed"/>
-   <onsetDate value="{{c.start}}"/>
+   <clinicalStatus value="active"/>
+   <verificationStatus value="confirmed"/>
+   <onsetDateTime value="{{c.start}}"/>
    {% if c.end %}
    <abatementDate value="{{c.end}}"/>
    {% endif %}

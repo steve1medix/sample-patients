@@ -55,10 +55,15 @@ def getVital(v, vt, encounter_id):
     }
 
 class FHIRSamplePatient(object):
-  def __init__(self, pid, path):
+  def __init__(self, pid, path, base_url=""):
     self.path = path
     self.pid = pid
-    
+
+    if len(base_url) > 0 and not base_url.endswith("/"):
+        base_url += "/"
+
+    self.base_url = base_url
+
     return
 
   def writePatientData(self):
@@ -67,18 +72,17 @@ class FHIRSamplePatient(object):
     p = Patient.mpi[self.pid]
 
     now = datetime.datetime.now().isoformat()
-    
+    base_url = self.base_url
+
     if self.pid == '99912345':
         vpatient = generate_patient()
         p.dob = vpatient["birthday"]
         VitalSigns.loadVitalsPatient(vpatient)
 
     print >>pfile, """<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-  <title>SMART patient bundle for transactional posting</title>
-  <id>urn:uuid:%s</id>
-  <updated>%s</updated>
-"""%(uid(), now)
+<Bundle xmlns="http://hl7.org/fhir">
+    <type value="transaction"/>
+"""
 
     if self.pid in Document.documents:
         for d in [doc for doc in Document.documents[self.pid] if doc.type == 'photograph']:
@@ -119,10 +123,10 @@ class FHIRSamplePatient(object):
               template = template_env.get_template('encounter.xml')
               print >>pfile, template.render(dict(globals(), **locals()))
           for vt in VitalSigns.vitalTypes:
-              try: 
+              try:
                   othervitals.append(getVital(v, vt, encounter_id))
               except: pass
-          try: 
+          try:
               systolic = getVital(v, VitalSigns.systolic, encounter_id)
               diastolic = getVital(v, VitalSigns.diastolic, encounter_id)
               bp = systolic
@@ -149,7 +153,7 @@ class FHIRSamplePatient(object):
                         bp['position_system'] = pc['system']
               bps.append(bp)
           except: pass
-          
+
     for bp in bps:
         systolicid = uid("Observation", "%s-systolic" % bp['id'])
         diastolicid = uid("Observation", "%s-diastolic" % bp['id'])
@@ -165,7 +169,9 @@ class FHIRSamplePatient(object):
                 "scale": "Qn",
                 "value": bp['systolic'],
                 "units": "mm[Hg]",
-                "unitsCode": "mm[Hg]"
+                "unitsCode": "mm[Hg]",
+                "categoryCode": "vital-signs",
+                "categoryDisplay": "Vital Signs"
         }
         template = template_env.get_template('observation.xml')
         print >>pfile, template.render(dict(globals(), **locals()))
@@ -178,28 +184,34 @@ class FHIRSamplePatient(object):
                 "scale": "Qn",
                 "value": bp['diastolic'],
                 "units": "mm[Hg]",
-                "unitsCode": "mm[Hg]"
+                "unitsCode": "mm[Hg]",
+                "categoryCode": "vital-signs",
+                "categoryDisplay": "Vital Signs"
         }
         template = template_env.get_template('observation.xml')
         print >>pfile, template.render(dict(globals(), **locals()))
-        
+
     template = template_env.get_template('observation.xml')
     for o in othervitals:
         id = uid("Observation", '-'.join((o["id"], o["name"].lower().replace(' ', '').replace('_', ''))))
         if "units" in o.keys():
            o["unitsCode"] = o["units"]
+           o["categoryCode"] = "vital-signs"
+           o["categoryDisplay"] = "Vital Signs"
         print >>pfile, template.render(dict(globals(), **locals()))
 
-    if self.pid in Lab.results:  
+    if self.pid in Lab.results:
       for o in Lab.results[self.pid]:
         id = uid("Observation", "%s-lab" % o.id)
+        o.categoryCode = "laboratory"
+        o.categoryDisplay = "Laboratory"
         print >>pfile, template.render(dict(globals(), **locals()))
 
     medtemplate = template_env.get_template('medication.xml')
     dispensetemplate = template_env.get_template('medication_dispense.xml')
-    if self.pid in Med.meds:  
+    if self.pid in Med.meds:
       for m in Med.meds[self.pid]:
-        medid = id = uid("MedicationPrescription", m.id)
+        medid = id = uid("MedicationOrder", m.id)
         print >>pfile, medtemplate.render(dict(globals(), **locals()))
 
         for f in Refill.refill_list(m.pid, m.rxn):
@@ -207,19 +219,19 @@ class FHIRSamplePatient(object):
           print >>pfile, dispensetemplate.render(dict(globals(), **locals()))
 
     template = template_env.get_template('condition.xml')
-    if self.pid in Problem.problems:  
+    if self.pid in Problem.problems:
       for c in Problem.problems[self.pid]:
         id = uid("Condition", c.id)
         print >>pfile, template.render(dict(globals(), **locals()))
-        
+
     template = template_env.get_template('procedure.xml')
-    if self.pid in Procedure.procedures:  
+    if self.pid in Procedure.procedures:
       for w in Procedure.procedures[self.pid]:
         id = uid("Procedure", w.id)
         print >>pfile, template.render(dict(globals(), **locals()))
-        
+
     template = template_env.get_template('immunization.xml')
-    if self.pid in Immunization.immunizations:  
+    if self.pid in Immunization.immunizations:
       for i in Immunization.immunizations[self.pid]:
         id = uid("Immunization", i.id)
         i.cvx_system, i.cvx_id = i.cvx.rsplit("cvx",1)
@@ -227,18 +239,18 @@ class FHIRSamplePatient(object):
         print >>pfile, template.render(dict(globals(), **locals()))
 
     template = template_env.get_template('family_history.xml')
-    if self.pid in FamilyHistory.familyHistories:  
+    if self.pid in FamilyHistory.familyHistories:
       for fh in FamilyHistory.familyHistories[self.pid]:
         id = uid("FamilyHistory", fh.id)
         print >>pfile, template.render(dict(globals(), **locals()))
-        
+
     template = template_env.get_template('smoking_status.xml')
-    if self.pid in SocialHistory.socialHistories: 
+    if self.pid in SocialHistory.socialHistories:
         t = SocialHistory.socialHistories[self.pid]
         t.smokingStatusText = SMOKINGCODES[t.smokingStatusCode]
         id = uid("Observation", '-'.join((t.id,"smokingstatus")))
         print >>pfile, template.render(dict(globals(), **locals()))
-    
+
     if p.gestage:
         template = template_env.get_template('observation.xml')
         o = {
@@ -248,7 +260,9 @@ class FHIRSamplePatient(object):
             "scale": "Qn",
             "value": p.gestage,
             "units": "weeks",
-            "unitsCode": "wk"
+            "unitsCode": "wk",
+            "categoryCode": "exam",
+            "categoryDisplay": "Exam"
         }
         id = uid("Observation", "%s-gestage" % self.pid)
         print >>pfile, template.render(dict(globals(), **locals()))
@@ -256,41 +270,33 @@ class FHIRSamplePatient(object):
     if self.pid in Allergy.allergies:
         for al in Allergy.allergies[self.pid]:
             if al.statement == 'positive':
-                id = uid("Substance", '-'.join((al.system.lower(), al.code)))
-                al.substance_id = id
-                template = template_env.get_template('substance.xml')
                 if al.type == 'drugClass':
-                    al.typeDescription = 'drug class'
+                    al.typeDescription = 'medication'
                     al.system = "http://rxnav.nlm.nih.gov/REST/Ndfrt"
                 elif al.type == 'drug':
-                    al.typeDescription = 'drug'
+                    al.typeDescription = 'medication'
                     al.system = "http://www.nlm.nih.gov/research/umls/rxnorm"
                 elif al.type == 'food':
-                    al.typeDescription = 'food',
+                    al.typeDescription = 'food'
                     al.system = "http://fda.gov/UNII/"
                 elif al.type == 'environmental':
-                    al.typeDescription = 'environmental substance',
+                    al.typeDescription = 'environment'
                     al.system = "http://fda.gov/UNII/"
-                print >>pfile, template.render(dict(globals(), **locals()))
                 if al.reaction:
                     if al.severity.lower() == 'mild':
-                        al.severity = 'minor'
-                        al.criticality = 'low'
+                        al.severity = 'mild'
+                        al.criticality = 'CRITL'
                     elif al.severity.lower() == 'severe':
                         al.severity = 'severe'
-                        al.criticality = 'high'
+                        al.criticality = 'CRITH'
                     elif al.severity.lower() == 'life threatening' or al.severity.lower() == 'fatal':
                         al.severity = 'severe'
-                        al.criticality = 'fatal'
+                        al.criticality = 'CRITH'
                     elif al.severity.lower() == 'moderate':
                         al.severity = 'moderate'
-                        al.criticality = 'medium'
+                        al.criticality = 'CRITU'
                     else:
                         al.severity = None
-                    id = uid("AdverseReaction", al.id)
-                    al.reaction_id = id
-                    template = template_env.get_template('adverse_reaction.xml')
-                    print >>pfile, template.render(dict(globals(), **locals()))
                 id = uid("AllergyIntolerance", al.id)
                 template = template_env.get_template('allergy.xml')
                 print >>pfile, template.render(dict(globals(), **locals()))
@@ -315,13 +321,15 @@ class FHIRSamplePatient(object):
                         "date": al.start,
                         "system": "http://snomed.info/sct",
                         "code": al.code,
-                        "name": al.allergen
+                        "name": al.allergen,
+                        "categoryCode": "exam",
+                        "categoryDisplay": "Exam"
                     }
                     id = uid("Observation", "%s-allergy" % al.id)
                     print >>pfile, template.render(dict(globals(), **locals()))
 
     addedPractitioner = False
-                    
+
     if self.pid in ClinicalNote.clinicalNotes:
         id = 'Practitioner/1234'
         template = template_env.get_template('practitioner.xml')
@@ -342,7 +350,7 @@ class FHIRSamplePatient(object):
                 d.display = 'Note'
                 template = template_env.get_template('document.xml')
                 print >>pfile, template.render(dict(globals(), **locals()))
-                
+
     if self.pid in Document.documents:
         if not addedPractitioner:
             id = 'Practitioner/1234'
@@ -364,7 +372,7 @@ class FHIRSamplePatient(object):
             d.display = d.type
             template = template_env.get_template('document.xml')
             print >>pfile, template.render(dict(globals(), **locals()))
-    
+
     if self.pid in ImagingStudy.imagingStudies:
         st = {}
         for img in ImagingStudy.imagingStudies[self.pid]:
@@ -412,12 +420,12 @@ class FHIRSamplePatient(object):
                 'number': series[img.series_oid]['images_count']
             })
 
-            
+
         for i in st:
             s = st[i]
             id = uid("ImagingStudy", s['id'])
             template = template_env.get_template('imagingstudy.xml')
             print >>pfile, template.render(dict(globals(), **locals()))
 
-    print >>pfile, "\n</feed>"
+    print >>pfile, "\n</Bundle>"
     pfile.close()

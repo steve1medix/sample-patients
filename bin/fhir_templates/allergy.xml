@@ -1,6 +1,7 @@
   {% extends "entry.xml" %}
   {% block content %}
-    <AllergyIntolerance xmlns="http://hl7.org/fhir">
+    <AllergyIntolerance>
+      {{resource_id}}
         <text>
             <status value="generated"/>
             <div xmlns="http://www.w3.org/1999/xhtml">Sensitivity to {{al.allergen}}</div>
@@ -8,18 +9,33 @@
         {%- if al.criticality %}
         <criticality value="{{al.criticality}}"/>
         {% endif %}
-        <sensitivityType value="allergy"/>
+        <category value="{{al.typeDescription}}"/>
         <recordedDate value="{{al.start}}"/>
         <status value="confirmed"/>
-        <subject>
-          <reference value="{{pid}}"/>
-        </subject>
+        <patient>
+          <reference value="{{base_url}}{{pid}}"/>
+        </patient>
         <substance>
-            <reference value="{{al.substance_id}}"/>
+          <coding>
+            <system value="{{al.system}}"/>
+            <code value="{{al.code}}"/>
+            <display value="{{al.allergen}}"/>
+          </coding>
+          <text value="{{al.allergen}}"/>
         </substance>
-        {%- if al.reaction_id %}
+        {%- if al.reaction %}
         <reaction>
-            <reference value="{{al.reaction_id}}"/>
+          <manifestation>
+            <coding>
+              <system value="http://snomed.info/sct"/>
+              <code value="{{al.snomed}}"/>
+              <display value="{{al.reaction}}"/>
+            </coding>
+            <text value="{{al.reaction}}"/>
+          </manifestation>
+        {%- if al.severity %}
+          <severity value="{{al.severity}}"/>
+        {% endif %}
         </reaction>
         {% endif %}
     </AllergyIntolerance>

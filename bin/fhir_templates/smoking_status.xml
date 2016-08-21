@@ -1,28 +1,38 @@
   {%- extends "entry.xml" %}
   {%- block content %}
-  <Observation xmlns="http://hl7.org/fhir">
+  <Observation>
+  {{resource_id}}
     <text>
       <status value="generated"/>
       <div xmlns="http://www.w3.org/1999/xhtml">Tobacco smoking status: {{t.smokingStatusText}}</div>
     </text>
-    <name>
+    <category>
+      <coding>
+          <system value="http://hl7.org/fhir/observation-category"/>
+          <code value="social-history"/>
+          <display value="Social History"/>
+      </coding>
+      <text value="Social History"/>
+    </category>
+    <code>
       <coding>
         <system value="http://loinc.org"/>
         <code value="72166-2"/>
         <display value="Tobacco smoking status"/>
       </coding>
-    </name>
+      <text value="Tobacco smoking status"/>
+    </code>
     <valueCodeableConcept>
       <coding>
         <system value="http://snomed.info/sct"/>
         <code value="{{t.smokingStatusCode}}"/>
         <display value="{{t.smokingStatusText}}"/>
       </coding>
+      <text value="{{t.smokingStatusText}}"/>
     </valueCodeableConcept>
     <status value="final"/>
-    <reliability value="ok"/>
     <subject>
-      <reference value="{{pid}}"/>
+      <reference value="{{base_url}}{{pid}}"/>
     </subject>
   </Observation>
   {% endblock %}

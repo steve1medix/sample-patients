@@ -1,29 +1,36 @@
   {%- extends "entry.xml" %}
   {%- block content %}
-  <Observation xmlns="http://hl7.org/fhir">
-    {%- if o.encounter_id %}
-    <extension url="http://fhir-registry.smarthealthit.org/Profile/vital-signs#encounter" >
-        <valueResource>
-            <reference value="{{o.encounter_id}}"/>
-        </valueResource>
-    </extension>
-    {% endif %}
+  <Observation>
+  {{resource_id}}
     <text>
       <status value="generated"/>
       <div xmlns="http://www.w3.org/1999/xhtml">{{o.name}}</div>
     </text>
-    <name>
+    <category>
+      <coding>
+          <system value="http://hl7.org/fhir/observation-category"/>
+          <code value="{{o.categoryCode}}"/>
+          <display value="{{o.categoryDisplay}}"/>
+      </coding>
+      <text value="{{o.categoryDisplay}}"/>
+    </category>
+    <code>
       <coding>
         <system value="{{o.system}}"/>
         <code value="{{o.code}}"/>
         <display value="{{o.name}}"/>
       </coding>
-    </name>
-    <appliesDateTime value="{{o.date}}"/>
+      <text value="{{o.name}}"/>
+    </code>
+    <effectiveDateTime value="{{o.date}}"/>
     <status value="final"/>
-    <reliability value="ok"/>
     <subject>
-      <reference value="{{pid}}"/>
+      <reference value="{{base_url}}{{pid}}"/>
     </subject>
+    {%- if o.encounter_id %}
+    <encounter>
+      <reference value="{{base_url}}{{o.encounter_id}}"/>
+    </encounter>
+    {% endif %}
   </Observation>
   {% endblock %}
